@@ -52,7 +52,7 @@ client.on('messageCreate', async message => {
     }
 });
 
-client.login('Your Token');
+client.login('Token');
 
 
 const server = http.createServer((req, res) => {
