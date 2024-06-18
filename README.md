@@ -49,11 +49,13 @@ STEP3 编写bot代码
 加入index.mjs  
 
 STEP4 在终端中运行bot
+----
 ```bash
 node index.mjs
 ```
 
 SEP5 邀请bot加入服务器
+----
 1. 在Discord开发者门户的“OAuth2”页面，选择“URL Generator”。
 2. 在“Scopes”中勾选“bot”。
 3. 在“Bot Permissions”中选择你希望授予Bot的权限（例如，“Send Messages”）。
