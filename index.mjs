@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from 'discord.js';
+import http from 'http';
 import fetch from 'node-fetch';
 
 const client = new Client({ 
@@ -51,4 +52,15 @@ client.on('messageCreate', async message => {
     }
 });
 
-client.login('YOUR TOKEN');
+client.login('token');
+
+
+const server = http.createServer((req, res) => {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('Hello, this is a Discord bot server!\n');
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
