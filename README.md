@@ -18,8 +18,8 @@ STEP1 设置开发环境
 
 
 ```bash
-    mkdir discord-bot  
-    cd discord-bot
+mkdir discord-bot  
+cd discord-bot
 ```
 mkdir 后应该是文档名字
 
