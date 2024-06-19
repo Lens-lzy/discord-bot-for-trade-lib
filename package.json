@@ -1,15 +1,18 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Alek LIU",
   "license": "ISC",
-  "description": "",
+  "description": "This is a disscord bot for lib manage",
   "dependencies": {
-    "discord.js": "^14.15.3"
+    "discord.js": "^14.15.3",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "node-fetch": "^3.3.2"
   }
 }

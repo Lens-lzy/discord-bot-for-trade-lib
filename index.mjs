@@ -1,7 +1,33 @@
 import { Client, GatewayIntentBits } from 'discord.js';
+import express from 'express';
 import http from 'http';
 import fetch from 'node-fetch';
+import fs from 'fs';
 
+//从config.json中读取token
+const rawData = fs.readFileSync('config.json');
+const config = JSON.parse(rawData);
+
+//从config.json中读取token
+const token = config.token;
+
+//初始化express应用
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+// 定义路由
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
+
+// 使用 Express 创建服务器并监听端口
+const server = http.createServer(app);
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+//初始化Discord客户端
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds, 
@@ -52,16 +78,5 @@ client.on('messageCreate', async message => {
     }
 });
 
-
-client.login('token');
-
-
-const server = http.createServer((req, res) => {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end('Hello, this is a Discord bot server!\n');
-});
-
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// 使用从配置文件中读取的token登录
+client.login(token);
