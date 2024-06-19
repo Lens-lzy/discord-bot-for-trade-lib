@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import express from 'express';
+import fs from 'fs';
 import http from 'http';
 import fetch from 'node-fetch';
-import fs from 'fs';
 
 //从config.json中读取token
 const rawData = fs.readFileSync('config.json');
@@ -45,11 +45,18 @@ async function fetchBooks() {
     const data = await response.json();
     const books = {};
 
-    data.forEach(file => {
+
+    for (const file of data) {
         const fileName = decodeURIComponent(file.name);
         const bookName = fileName.replace(/_/g, ' ').replace(/\.[^/.]+$/, '');
-        books[bookName] = file.download_url;
-    });
+        const longUrl = file.download_url;
+        
+        // 使用TinyURL API生成短链接
+        const shortUrlResponse = await fetch(`https://tinyurl.com/api-create.php?url=${longUrl}`);
+        const shortUrl = await shortUrlResponse.text();
+        
+        books[bookName] = { shortUrl, fileName };
+    }
 
     return books;
 }
@@ -66,7 +73,10 @@ client.on('messageCreate', async message => {
 
         for (const bookName in books) {
             if (bookName.toLowerCase().includes(query.toLowerCase())) {
-                message.channel.send(`这是这本书的下载地址: ${books[bookName]}`);
+                const { shortUrl, fileName } = books[bookName]
+                message.channel.send(`🌟 哈哈！找到了！请点击以下蓝色字符下载：`);
+                message.channel.send(`👉👉👉 [${fileName}](${shortUrl}) 👈👈👈`)
+                message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`)
                 found = true;
                 break;
             }
