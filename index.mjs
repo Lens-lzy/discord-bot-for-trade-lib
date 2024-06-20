@@ -4,14 +4,14 @@ import fs from 'fs';
 import http from 'http';
 import fetch from 'node-fetch';
 
-//从config.json中读取token
+// 从config.json中读取token
 const rawData = fs.readFileSync('config.json');
 const config = JSON.parse(rawData);
 
-//从config.json中读取token
+// 从配置文件中读取token
 const token = config.token;
 
-//初始化express应用
+// 初始化express应用
 const app = express();
 const PORT = process.env.PORT || 8080;
 
@@ -27,7 +27,7 @@ server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-//初始化Discord客户端
+// 初始化Discord客户端
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds, 
@@ -44,7 +44,6 @@ async function fetchBooks() {
     const response = await fetch(GITHUB_API_URL);
     const data = await response.json();
     const books = {};
-
 
     for (const file of data) {
         const fileName = decodeURIComponent(file.name);
@@ -67,16 +66,29 @@ client.once('ready', () => {
 
 client.on('messageCreate', async message => {
     if (message.content.startsWith('/book')) {
-        const query = message.content.split(' ').slice(1).join(' ');
+        const queryParts = message.content.split(' ').slice(1);
+        let language = '';  // 默认语言为空
+        let query = queryParts.join(' ');
+
+        // 检查查询中是否包含语言标识符
+        if (queryParts[0].toLowerCase() === 'en' || queryParts[0].toLowerCase() === 'cn') {
+            language = queryParts[0].toLowerCase() + '_';  // 设置语言标识符
+            query = queryParts.slice(1).join(' ');  // 移除语言标识符后的实际查询
+        }
+
         const books = await fetchBooks();
         let found = false;
 
         for (const bookName in books) {
-            if (bookName.toLowerCase().includes(query.toLowerCase())) {
-                const { shortUrl, fileName } = books[bookName]
+            const lowerCaseBookName = bookName.toLowerCase();
+            const lowerCaseQuery = query.toLowerCase();
+
+            // 如果查询中指定了语言标识符，则仅匹配包含该标识符的书籍
+            if (lowerCaseBookName.includes(lowerCaseQuery) && (language === '' || lowerCaseBookName.includes(language))) {
+                const { shortUrl, fileName } = books[bookName];
                 message.channel.send(`🌟 哈哈！找到了！请点击以下蓝色字符下载：`);
-                message.channel.send(`👉👉👉 [${fileName}](${shortUrl}) 👈👈👈`)
-                message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`)
+                message.channel.send(`👉👉👉 [${fileName}](${shortUrl}) 👈👈👈`);
+                message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
                 found = true;
                 break;
             }
