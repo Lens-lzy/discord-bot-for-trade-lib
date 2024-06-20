@@ -66,25 +66,15 @@ client.once('ready', () => {
 
 client.on('messageCreate', async message => {
     if (message.content.startsWith('/book')) {
-        const queryParts = message.content.split(' ').slice(1);
-        let language = '';  // 默认语言为空
-        let query = queryParts.join(' ');
-
-        // 检查查询中是否包含语言标识符
-        if (queryParts[0].toLowerCase() === 'en' || queryParts[0].toLowerCase() === 'cn') {
-            language = queryParts[0].toLowerCase() + '_';  // 设置语言标识符
-            query = queryParts.slice(1).join(' ');  // 移除语言标识符后的实际查询
-        }
-
+        const queryParts = message.content.split(' ').slice(1).join(' ').split('+');
         const books = await fetchBooks();
         let found = false;
 
         for (const bookName in books) {
             const lowerCaseBookName = bookName.toLowerCase();
-            const lowerCaseQuery = query.toLowerCase();
+            const isMatch = queryParts.every(part => lowerCaseBookName.includes(part.toLowerCase()));
 
-            // 如果查询中指定了语言标识符，则仅匹配包含该标识符的书籍
-            if (lowerCaseBookName.includes(lowerCaseQuery) && (language === '' || lowerCaseBookName.includes(language))) {
+            if (isMatch) {
                 const { shortUrl, fileName } = books[bookName];
                 message.channel.send(`🌟 哈哈！找到了！请点击以下蓝色字符下载：`);
                 message.channel.send(`👉👉👉 [${fileName}](${shortUrl}) 👈👈👈`);
