@@ -174,7 +174,11 @@ client.on('messageCreate', async message => {
             });
             message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
         } else {
-            message.channel.send('没有找到这个系列的书籍，请联系奶牛猫！');
+            let availableSeries = '📚 我们目前有以下系列的书籍：\n';
+            Object.keys(series).forEach(name => {
+                availableSeries += `• ${name}\n`;
+            });
+            message.channel.send(`没有找到这个系列的书籍。${availableSeries}`);
         }
     }
 });
