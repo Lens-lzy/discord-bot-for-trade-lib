@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import express from 'express';
 import fs from 'fs';
 import http from 'http';
@@ -11,6 +11,8 @@ const config = JSON.parse(rawData);
 // 从配置文件中读取token
 const token = config.token;
 const githubToken = config.github_token; // 添加 GitHub 个人访问令牌
+const clientId = config.client_id; // 添加你的客户端ID
+const guildId = config.guild_id; // 添加你的服务器ID
 
 // 初始化express应用
 const app = express();
@@ -36,6 +38,51 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ] 
 });
+
+// 注册斜杠命令
+const commands = [
+  {
+    name: 'book',
+    description: 'Search for a book',
+    options: [
+      {
+        name: 'keywords',
+        type: 3, // 3 表示 STRING 类型
+        description: 'The keywords to search for',
+        required: true,
+      },
+    ],
+  },
+  {
+    name: 'series',
+    description: 'Search for a series',
+    options: [
+      {
+        name: 'name',
+        type: 3, // 3 表示 STRING 类型
+        description: 'The name of the series',
+        required: true,
+      },
+    ],
+  },
+];
+
+const rest = new REST({ version: '9' }).setToken(token);
+
+(async () => {
+  try {
+    console.log('Started refreshing application (/) commands.');
+
+    await rest.put(
+      Routes.applicationGuildCommands(clientId, guildId),
+      { body: commands },
+    );
+
+    console.log('Successfully reloaded application (/) commands.');
+  } catch (error) {
+    console.error(error);
+  }
+})();
 
 const GITHUB_REPO = 'Lens-lzy/trading-learning-lib';
 const GITHUB_BRANCH = 'main';
@@ -121,44 +168,46 @@ client.once('ready', () => {
     console.log('Bot is online!');
 });
 
-client.on('messageCreate', async message => {
-    if (message.content.startsWith('/book')) {
-        const queryParts = message.content.split(' ').slice(1).join(' ').split('+');
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName, options } = interaction;
+
+    if (commandName === 'book') {
+        const keywords = options.getString('keywords').split('+');
         let books;
         try {
             books = await fetchBooks();
         } catch (error) {
             console.error('Error fetching books:', error);
-            message.channel.send('获取书籍时发生错误，请稍后重试。');
+            await interaction.reply('获取书籍时发生错误，请稍后重试。');
             return;
         }
         let found = false;
 
         for (const bookName in books) {
             const lowerCaseBookName = bookName.toLowerCase();
-            const isMatch = queryParts.every(part => lowerCaseBookName.includes(part.toLowerCase()));
+            const isMatch = keywords.every(part => lowerCaseBookName.includes(part.toLowerCase()));
 
             if (isMatch) {
                 const { shortUrl, fileName } = books[bookName];
-                message.channel.send(`🌟 哈哈！找到了！请点击以下蓝色字符下载：`);
-                message.channel.send(`👉👉👉 [${fileName}](${shortUrl}) 👈👈👈`);
-                message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
+                await interaction.reply(`🌟 哈哈！找到了！请点击以下蓝色字符下载：\n👉👉👉 [${fileName}](${shortUrl}) 👈👈👈\n 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            message.channel.send('没有找到这个书籍，请联系奶牛猫！');
+            await interaction.reply('没有找到这个书籍，请联系奶牛猫！');
         }
-    } else if (message.content.startsWith('/series')) {
-        const seriesName = message.content.split(' ').slice(1).join(' ').toLowerCase();
+    } else if (commandName === 'series') {
+        const seriesName = options.getString('name').toLowerCase();
         let readmeContent;
         try {
             readmeContent = await fetchReadme();
         } catch (error) {
             console.error('Error fetching README:', error);
-            message.channel.send('获取系列信息时发生错误，请稍后重试。');
+            await interaction.reply('获取系列信息时发生错误，请稍后重试。');
             return;
         }
         const series = parseReadme(readmeContent);
@@ -170,15 +219,15 @@ client.on('messageCreate', async message => {
                 series[seriesName].forEach(book => {
                     responseMessage += `• ${book}\n`;
                 });
-                message.channel.send(responseMessage);
+                interaction.reply(responseMessage);
             });
-            message.channel.send(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
+            interaction.reply(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
         } else {
             let availableSeries = '📚 我们目前有以下系列的书籍：\n';
             Object.keys(series).forEach(name => {
                 availableSeries += `• ${name}\n`;
             });
-            message.channel.send(`没有找到这个系列的书籍。${availableSeries}`);
+            await interaction.reply(`没有找到这个系列的书籍。${availableSeries}`);
         }
     }
 });
