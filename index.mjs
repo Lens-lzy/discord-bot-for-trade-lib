@@ -65,9 +65,13 @@ const commands = [
       },
     ],
   },
+  {
+    name: 'lib',
+    description: 'List all books in all series',
+  },
 ];
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
   try {
@@ -174,13 +178,15 @@ client.on('interactionCreate', async interaction => {
     const { commandName, options } = interaction;
 
     if (commandName === 'book') {
+        await interaction.deferReply(); // 确保响应互动
+
         const keywords = options.getString('keywords').split('+');
         let books;
         try {
             books = await fetchBooks();
         } catch (error) {
             console.error('Error fetching books:', error);
-            await interaction.reply('获取书籍时发生错误，请稍后重试。');
+            await interaction.editReply('获取书籍时发生错误，请稍后重试。');
             return;
         }
         let found = false;
@@ -191,44 +197,66 @@ client.on('interactionCreate', async interaction => {
 
             if (isMatch) {
                 const { shortUrl, fileName } = books[bookName];
-                await interaction.reply(`🌟 哈哈！找到了！请点击以下蓝色字符下载：\n👉👉👉 [${fileName}](${shortUrl}) 👈👈👈\n 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
+                await interaction.editReply(`🌟 哈哈！找到了！请点击以下蓝色字符下载：\n👉👉👉 [${fileName}](${shortUrl}) 👈👈👈\n 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            await interaction.reply('没有找到这个书籍，请联系奶牛猫！');
+            await interaction.editReply('没有找到这个书籍，请联系奶牛猫！');
         }
     } else if (commandName === 'series') {
+        await interaction.deferReply(); // 确保响应互动
+
         const seriesName = options.getString('name').toLowerCase();
         let readmeContent;
         try {
             readmeContent = await fetchReadme();
         } catch (error) {
             console.error('Error fetching README:', error);
-            await interaction.reply('获取系列信息时发生错误，请稍后重试。');
+            await interaction.editReply('获取系列信息时发生错误，请稍后重试。');
             return;
         }
         const series = parseReadme(readmeContent);
         const matchedSeries = Object.keys(series).filter(name => name.toLowerCase().includes(seriesName));
 
         if (matchedSeries.length > 0) {
-            matchedSeries.forEach(seriesName => {
-                let responseMessage = `📚 找到了这些属于系列 [${seriesName}] 的书籍：\n\n`;
-                series[seriesName].forEach(book => {
-                    responseMessage += `• ${book}\n`;
-                });
-                interaction.reply(responseMessage);
+            let responseMessage = `📚 找到了这些属于系列 [${matchedSeries[0]}] 的书籍：\n\n`;
+            series[matchedSeries[0]].forEach(book => {
+                responseMessage += `• ${book}\n`;
             });
-            interaction.reply(` 📮 有问题请联系 **奶牛猫** ,祝您阅读愉快~~~`);
+            await interaction.editReply(responseMessage);
         } else {
             let availableSeries = '📚 我们目前有以下系列的书籍：\n';
             Object.keys(series).forEach(name => {
                 availableSeries += `• ${name}\n`;
             });
-            await interaction.reply(`没有找到这个系列的书籍。${availableSeries}`);
+            await interaction.editReply(`没有找到这个系列的书籍。${availableSeries}`);
         }
+    } else if (commandName === 'lib') {
+        await interaction.deferReply(); // 确保响应互动
+
+        let readmeContent;
+        try {
+            readmeContent = await fetchReadme();
+        } catch (error) {
+            console.error('Error fetching README:', error);
+            await interaction.editReply('获取图书信息时发生错误，请稍后重试。');
+            return;
+        }
+        const series = parseReadme(readmeContent);
+        let responseMessage = `📚 我们目前有以下系列的书籍：\n\n`;
+
+        Object.keys(series).forEach(seriesName => {
+            responseMessage += `**${seriesName}**:\n`;
+            series[seriesName].forEach(book => {
+                responseMessage += `• ${book}\n`;
+            });
+            responseMessage += '\n';
+        });
+
+        await interaction.editReply(responseMessage);
     }
 });
 
