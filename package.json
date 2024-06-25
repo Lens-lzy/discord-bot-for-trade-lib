@@ -11,6 +11,7 @@
   "description": "This is a disscord bot for lib manage",
   "dependencies": {
     "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "node-fetch": "^3.3.2"
